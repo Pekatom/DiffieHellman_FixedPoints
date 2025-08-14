@@ -1,8 +1,7 @@
 '''
 This Sage script is for experimenting with fixed points of Diffie-Hellman permutations 
-and with vulnerable exponents of prime numbers. The contributors to 
-the script are S.V. Breslavets and V.A. Dolgushev. The script accompanies 
- S.V. Breslavets's 2025 Yulia's Dream research paper 'Fixed Points of Diffie-Hellman Permutations'
+and with vulnerable exponents of prime numbers. The script accompanies  S.V. Breslavets's 2025 Yulia's Dream research paper 
+'Fixed Points of Diffie-Hellman Permutations'. Currently, V.A. Dolgushev is the only contributor to the script 
 '''
 import time
 import random
@@ -138,6 +137,21 @@ def test_prim_roots(p):
     return Test1 == sorted(Test)
 
 '''
+for a prime p, its primitive root b and an integer 1 <= y <= (p-1), 
+the command DLP_brute_force(p, b, y) finds the integer 
+1 <= x <= (p-1) such that b^x is congruent to y mod p
+'''
+#tested
+def DLP_brute_force(p, b, y):
+    t0 = time.time( )
+    for x in range(1,p):
+        if power_mod(b, x, p) == y:
+            print('It took ', time.time( ) - t0, ' seconds.')
+            break
+    return x
+
+
+'''
 let p be prime and b be a primitive root mod p;
 the command DH_perm(p, b, x) returns the result of applying 
 the corresponding Diffie-Hellman permutation to an integer 1 <= x <= p-2; 
@@ -146,6 +160,26 @@ in fact, x can be any integer
 #tested
 def DH_perm(p, b, x):
     return int(power_mod(b, x, p)) - 1 
+
+'''
+let p be prime and b be a primitive root mod p;
+the command DH_order(p, b) returns the order of the DH permutation \tau_{p, b}
+'''
+#tested
+def DH_order(p, b):
+    aux = [DH_perm(p, b, x) for x in range(1,p-1)]
+    g = SymmetricGroup(p-2)(aux)
+    return g.order()
+
+'''
+let p be prime and b be a primitive root mod p;
+the command DH_cycle_type(p, b) returns the cycle type of the DH permutation \tau_{p, b} 
+'''
+#tested
+def DH_cycle_type(p, b):
+    aux = [DH_perm(p, b, x) for x in range(1,p-1)]
+    g = SymmetricGroup(p-2)(aux)
+    return g.cycle_type()
 
 '''
 let p be prime and b be a primitive root mod p; the command 
@@ -165,6 +199,7 @@ to the pair (p, b), where b is the smallest primitive roots modulo p
 def fixed_pts4smallest_prim_root(p):
     b = primitive_root(p) #the smallest primitive root mod p
     return fixed_points(p, b)
+    
 
 '''
 this is a subroutine for vul_exp( ) and vul_exp1()   
@@ -469,39 +504,34 @@ def max_num_fp4testing(p):
 given two positive integers m, d the command gcpd(d, m) returns the greatest positive 
 divisor d_1 of d such that d_1 is coprime to m
 '''
-#tested
+#test
 def gcpd(d, m):
     q = d
     while gcd(q, m)>1:
         q = q//gcd(q,m)
     return q
 
-#for testing; gcpd_slow( , ) works slower than gcpd( , )
-def gcpd_slow(d,m):
+'''
+gcpd1( , ) is a more direct implementation of gcpd; 
+VD: to my surprise, the performance in terms of time is comparable 
+to that of gcpd
+'''
+#for testing 
+def gcpd1(d,m):
     for t in divisors(d)[::-1]:
         if gcd(t, m) == 1:
             return t
 
-
-'''
-the following line was used for testing gcpd:
-{gcpd(pr[0],pr[1]) == gcpd_slow(pr[0], pr[1]) for pr in product(range(1, 150), repeat = 2)}
-'''
 #for testing
-def gcpd_slow_test(N):
+def test_gcpd(n, N):
     out = [ ]
     T0 = time.time()
-    out = [gcpd_slow(t[0], t[1]) for t in product(range(1,N), repeat = 2)]
-    print(time.time() - T0)
-    return out
-    
-#for testing
-def gcpd_test(N):
-    out = [ ]
+    out = [gcpd(t[0], t[1]) for t in product(range(n,N), repeat = 2)]
+    print('Time elapsed = ', time.time() - T0)
     T0 = time.time()
-    out = [gcpd(t[0], t[1]) for t in product(range(1,N), repeat = 2)]
-    print(time.time() - T0)
-    return out
+    out1 = [gcpd1(t[0], t[1]) for t in product(range(n,N), repeat = 2)]
+    print('Time elapsed = ', time.time() - T0)
+    return out==out1
 
 '''
 for a prime p and a vulnerable exponent x, the command 
@@ -516,21 +546,6 @@ def num_disting_prim_roots(x, p):
     d = gcd(x, p-1); m = (p-1)//d
     d1 = gcpd(d, m); d2 = d//d1
     return d2*euler_phi(d1)
-
-
-'''
-for a prime p > 3, the command extra_vul_exp(p) returns the tuple 
-of integers 1 <= x <= p-2 (if any) with the largest possible number of 
-primitive roots b mop p such that x is a fixed point of the Diffie-Hellman permutation 
-corresponding to (p,b)
-'''
-#
-def extra_vul_exp(p):
-    ve = vul_exp(p)
-    pairs = [(x, len(disting_prim_roots(x, p))) for x in ve]
-    m = max([pr[1] for pr in pairs])
-    return tuple(pr[0] for pr in pairs if pr[1] == m)
-
 
 '''
 x is a vulnerable exponent relative to a prime p and b is a 
@@ -634,7 +649,6 @@ def test_root_profile(p):
 
 '''
 for a prime p > 7, the command max_num_fp(p) returns the maximum of the following set 
-
 {# of fixed points of \tau_{p, b} | b is a primitive root modulo p }
 '''
 #tested
@@ -646,9 +660,9 @@ for a safe prime p > 7, the command max_num_fp4safe(p) returns the maximum of th
 
 {# of fixed points of \tau_{p, b} | b is a primitive root modulo p }
 
-it uses the relatively safe command root_profile4safe( )
+it uses the command root_profile4safe( )
 '''
-#
+#tested
 def max_num_fp4safe(p):
     return max(root_profile4safe(p))
 
@@ -669,9 +683,6 @@ def testing_max_num_fp(p):
 
 #for testing max_num_fp4safe( )
 def testing_max_num_fp4safe(p):
-    if not is_safe(p):
-        print(p,'  is not a safe prime!')
-        return None
     print('The commands are executed in this order: max_num_fp4safe( ), max_num_fp( )')
     T0 = time.time( )
     m4safe = max_num_fp4safe(p)
@@ -680,6 +691,50 @@ def testing_max_num_fp4safe(p):
     m = max_num_fp(p)
     print('   time elapsed = ', time.time( )-T0)
     return m==m4safe
+
+'''
+for a prime p, the command vul_prim_roots(p) returns the list of 
+vulnerable primitive roots modulo p; the output may not be sorted
+'''
+#tested
+def vul_prim_roots(p):
+    gp = primitive_root(p); out = [ ]
+    RP = root_profile(p); m = 0
+    for k in range(1, len(RP)):
+        if gcd(k, p-1)==1:
+            if RP[k]==m: out.append(power_mod(gp, k, p))
+            if RP[k]>m:
+                out = []; out.append(power_mod(gp, k, p))
+                m = RP[k]
+    return out
+
+'''
+for a prime p, the command vul_prim_roots_slow(p) returns the list of 
+vulnerable primitive roots modulo p; the output may not be sorted;
+the command vul_prim_roots_slow() is usually slower than vul_prim_roots( )
+'''
+#for testing
+def vul_prim_roots_slow(p):
+    m = 0; out = []
+    for b in prim_roots(p):
+        new = len(fixed_points(p, b))
+        if new==m: out.append(b)
+        if new>m:
+            out =[ ]; out.append(b)
+            m = new       
+    return out
+
+#for testing vul_prim_roots()
+def test_vul_prim_roots(p):
+    print('   First, we execute vul_prim_roots')
+    T0 =time.time()
+    VPR = vul_prim_roots(p)
+    print('Time elapsed = ', time.time()-T0)
+    T0 =time.time()
+    VPR_slow = vul_prim_roots_slow(p)
+    print('Time elapsed = ', time.time()-T0)
+    return sorted(VPR)==sorted(VPR_slow)
+
 
 
 '''
@@ -726,8 +781,8 @@ def test_frequencies4safe(p):
     print('Time elapsed = ', time.time()-T0)
     return fr4safe==fr_slow 
 
-SP = [p for p in prime_range(11, 13025) if is_safe(p)]
-#it makes sense to store a long list (or tuple?) of safe primes...
+SP = load_now('ManySafePrimes')
+#the above line loads a list of  124,849 safe primes starting with p = 11
 
 '''
 for a prime p and its primitive root b, fixed_points_gen(p, b) is a generator of 
@@ -765,15 +820,13 @@ def testing_fixed_points_gen(p, num):
 '''
 The code below is for comparing DH permutations with random permutations
 '''
-
-
     
 #VD: I am guessing that it is extremely unlikely to find a DH permutation with > 41 fixed points; so I chose range(42) below  
 Poisson = [exp(-1.0)/factorial(k) for k in range(42)] # well, it is the Poisson distribution for lambda = 1
 
 '''
 for a safe prime p; the command distance(p) returns the 'distance' between the 
-empirical distribution frequencies4safe(p) and the theoretical one, i.e. Poisson 
+empirical distribution frequencies4safe(p) and the theoretical one, i.e. the Poisson distribution 
 '''
 #
 def distance(p):
@@ -784,16 +837,6 @@ def distance(p):
     fr = fr + [0]*(len(Poisson)-len(fr)) #appending the necessary number of zeros
     aux = [(t[0] - t[1])**2 for t in zip(fr, Poisson)]
     return (sum(aux))**0.5
-
-# Nathan's suggestion... 
-def are_close(p):
-    if not is_safe(p):
-        print(p, ' is not a safe prime!')
-        return None
-    fr = frequencies4safe(p)
-    fr = fr + [0]*(len(Poisson)-len(fr)) #appending the necessary number of zeros
-    aux = [abs(t[0] - t[1])/t[1] for t in zip(fr, Poisson)]
-    return sum(aux)/len(Poisson)
 
 #
 def cab_distance(p):
@@ -818,66 +861,5 @@ def cab_distances4dict(D):
         aux = [abs(t[0] - t[1]) for t in zip(fr, Poisson)]
         out.append(sum(aux)/len(Poisson))
     return out 
-
-'''
-DO WE NEED THE CODE WRITTEN BELOW THIS LINE?...
-'''
-
-def disting_exp_old(x, p):
-    d = gcd(x, p-1); m = (p-1)//d 
-    x1 = x//d; gp = primitive_root(p)
-    aux = power_mod(gp, d, p) 
-    for t1 in range(1, m):
-        if (gcd(t1, m) == 1 and power_mod(aux, t1, p) == x+1):
-            break
-    k0 = (inverse_mod(x1, m)*t1)%m
-    d2 = gcpd(d, m); d1 = d//d2
-    m_inv = inverse_mod(m, d2) 
-    if d2 == 1:
-        return tuple((k0 + m*h) for h in range(d1))
-    out = ( )
-    for nu in range(1, d2):
-        if gcd(nu, d2) == 1:
-            rhs = (nu - k0)%d2
-            s_nu = (m_inv*rhs)%d2
-            for h in range(d1):
-                out = out + (k0 + m *(s_nu + d2*h),)
-    return out
-
-
-
-'''
-for a prime p, its primitive root b and an integer 1 <= y <= (p-1), 
-the command DLP_brute_force(p, b, y) finds the integer 
-1 <= x <= (p-1) such that b^x is congruent to y mod p
-'''
-#
-def DLP_brute_force(p, b, y):
-    t0 = time.time( )
-    for x in range(1,p):
-        if power_mod(b, x, p) == y:
-            print('It took ', time.time( ) - t0, ' seconds.')
-            break
-    return x
-
-
-'''
-given a prime p, the command display_fp(p) prints pairs 
-(b, tuple_b), where b is a primitive root mod p and tuple_b is the 
-tuple of non-trivial fixed points of the DH permutation corresponding to (p, b)
-'''
-#
-def display_fp(p):
-    for b in prim_roots(p):
-        print(b, '   ', fixed_points(p, b))
-
-
-#selected primes in range > 1000 
-#[1187, 1193, 1201, 1213, 1217, 1223, 1229, 1231, 1237, 1249, 1259, 1277, 1327, 1999, 2003, 2011]
- 
-#selected primes: 
-#[10243, 10247, 10253, 10259, 10267, 10271, 10273, 10289, 10301, 10303, 10313, 10321, 10331, 10333, 10337, 10343, 10357, 10369, 10391, 10399, 10427, 10429, 50021]
-
-
 
 
