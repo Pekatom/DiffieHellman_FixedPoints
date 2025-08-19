@@ -415,19 +415,6 @@ def has_vul_exp_gt1(p):
         if order_mod((x+1),p)*gcd(x,p-1)==(p-1):
             return True
     return False
-
-'''
-addressing the question about primes with at least one vulnerable exponent x > 2; 
-for an integer n, the command about_vul_exp_gt1(n) returns True if every prime 11 \le p \le n
-has at least one vulnerable exponent x > 1; otherwise False; the command is timed 
-'''
-#
-def about_vul_exp_gt1(n):
-    T0 = time.time()
-    out = {has_vul_exp_gt1(p) for p in prime_range(11, n+1)}
-    print('Time elapsed = ',  time.time()-T0)
-    return out=={True}
-
  
 '''
 for a prime p > 7, the command percentage_vul_exp(p) returns 
@@ -452,18 +439,28 @@ def percentage_vul_exp_gt(p, r):
             return True
     return False
  
- 
 '''
 for a safe prime p > 7, the command percentage_vul_exp4safe(p) returns 
 the percentage of vulnerable exponents among the total number of (p-2) exponents 
 '''
-#
+#tested
 def percentage_vul_exp4safe(p):
     if not is_safe(p):
         print(p,' is not a safe prime')
         return None
     num = len(vul_exp4safe(p))
     return 100.0*num/(p-2)
+
+#for testing percentage_vul_exp4safe( )
+def test_percentage_vul_exp4safe(p):
+    print(' First, we execute percentage_vul_exp4safe, then percentage_vul_exp')
+    T0 = time.time()
+    r4safe = percentage_vul_exp4safe(p)
+    print('Time elapsed = ', time.time()-T0)
+    T0 = time.time()
+    r = percentage_vul_exp(p)
+    print('Time elapsed = ', time.time()-T0)
+    return r4safe==r    
 
 '''
 p is prime and x is an integer 1 <= x <= p-2;
@@ -587,7 +584,7 @@ def test_disting_exp(p, b):
 for a prime p, the command root_profile(p, timed = None) returns the list L of nonnegative integers
 of length p-1; if k is coprime to (p-1), then L[k] is the number of fixed points of the DH permutation 
 \tau_{p, gp^k}, where gp is the smallest primitive root modulo p; if k is not coprime to (p-1), 
-the L[k] == 0
+then L[k] == 0
 '''
 #tested
 def root_profile(p, timed = None):
@@ -604,7 +601,7 @@ def root_profile(p, timed = None):
 
 '''
 for a safe prime p = 2*q+1, the command root_profile4safe(p) returns the 
-list of length (p-1)  of non-negative integers with L[0] = 0; if gcd(k, 2q)!=1, 
+list L of length (p-1)  of non-negative integers with L[0] = 0; if gcd(k, 2q)!=1, 
 L[k] =0, if gcd(k, 2q)==1, then L[k] is the number of fixed points of tau_{p, g_p^k}, 
 where g_p is the smallest primitive root modulo p
 '''
